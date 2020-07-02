@@ -37,13 +37,6 @@ def frref(A, TOL=None, TYPE=''):
 
     # Process Arguments
     # ----------------------------------------------------------
-    # TOLERENCE
-    # % Compute the default tolerance if none was provided.
-    if TOL is None:
-        # Prior commit had TOL default to 1e-6
-        # TOL = max(m,n)*eps(class(A))*norm(A,'inf')
-        TOL = max(m, n)*np.spacing(type(A)(1))*np.linalg.norm(A, np.inf)
-
     # TYPE -- Sparce (s) or non-Sparce (Full, f)
     if TYPE == '':   # set TYPE if sparse or not
         if isspmatrix(A):
@@ -60,6 +53,14 @@ def frref(A, TOL=None, TYPE=''):
             print(
                 'Unknown matrix TYPE! Use ''f'' for full and ''s'' for sparse matrices.')
             exit()
+
+    if TYPE=='f':
+        # TOLERENCE
+        # % Compute the default tolerance if none was provided.
+        if TOL is None:
+            # Prior commit had TOL default to 1e-6
+            # TOL = max(m,n)*eps(class(A))*norm(A,'inf')
+            TOL = max(m, n)*np.spacing(type(A)(1))*np.linalg.norm(A, np.inf)
 
     # Non-Sparse
     # ----------------------------------------------------------
@@ -108,36 +109,32 @@ def frref(A, TOL=None, TYPE=''):
     # Sparse
     # ----------------------------------------------------------
     else:
-        return None, None
+        A = np.array(A.toarray())
+        return frref(A, TYPE='f')
 
+        # # TODO: QR-decomposition of a Sparse matrix is not so simple in Python -- still need to figure out a solution
+        # # % Non-pivoted Q-less QR decomposition computed by Matlab actually
+        # # % produces the right structure (similar to rref) to identify independent
+        # # % columns.
+        # R = numpy.linalg.qr(A)
 
-def frref_orig(A, TOL, TYPE):
-    # Only do_full implemented. TODO: The remaining of the function
-    return frref(A, TOL, TYPE)
-    '''
-    else
-        % Non-pivoted Q-less QR decomposition computed by Matlab actually
-        % produces the right structure (similar to rref) to identify independent
-        % columns.
-        R = qr(A);
+        # # % i_dep = pivot columns = dependent variables
+        # # %       = left-most non-zero column (if any) in each row
+        # # % indep_rows (binary vector) = non-zero rows of R
+        # [indep_rows, i_dep] = np.max(R ~= 0, [], 2)     # TODO
+        # indep_rows = full[indep_rows]; # % probably more efficient
+        # i_dep = i_dep[indep_rows]
+        # i_indep = setdiff[1:n, i_dep]
 
-        % i_dep = pivot columns = dependent variables
-        %       = left-most non-zero column (if any) in each row
-        % indep_rows (binary vector) = non-zero rows of R
-        [indep_rows, i_dep] = max(R ~= 0, [], 2);
-        indep_rows = full(indep_rows); % probably more efficient
-        i_dep = i_dep(indep_rows);
-        i_indep = setdiff(1:n, i_dep);
+        # # % solve R(indep_rows, i_dep) x = R(indep_rows, i_indep)
+        # # %   to eliminate all the i_dep columns
+        # # %   (i.e. we want F(indep_rows, i_dep) = Identity)
+        # F = sparse([],[],[], m, n)
+        # F[indep_rows, i_indep] = R[indep_rows, i_dep] \ R[indep_rows, i_indep]
+        # F[indep_rows, i_dep] = speye(length(i_dep))
 
-        % solve R(indep_rows, i_dep) x = R(indep_rows, i_indep)
-        %   to eliminate all the i_dep columns
-        %   (i.e. we want F(indep_rows, i_dep) = Identity)
-        F = sparse([],[],[], m, n);
-        F(indep_rows, i_indep) = R(indep_rows, i_dep) \ R(indep_rows, i_indep);
-        F(indep_rows, i_dep) = speye(length(i_dep));
+        # # % result
+        # A = F
+        # jb = i_dep
 
-        % result
-        A = F;
-        jb = i_dep;
-    end
-    '''
+        # return A, jb
