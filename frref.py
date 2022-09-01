@@ -60,7 +60,7 @@ def frref(A, TOL=None, TYPE=''):
         if TOL is None:
             # Prior commit had TOL default to 1e-6
             # TOL = max(m,n)*eps(class(A))*norm(A,'inf')
-            TOL = max(m, n)*np.spacing(type(A)(1))*np.linalg.norm(A, np.inf)
+            TOL = max(m, n)*np.finfo(A.dtype).eps*np.linalg.norm(A, np.inf)
 
     # Non-Sparse
     # ----------------------------------------------------------
